@@ -1,12 +1,39 @@
-# app.py
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import base64
 
 # Page Config
 st.set_page_config(page_title="Titanic EDA Dashboard", layout="wide")
+
+# Set background image from local file (ship.Titanic.jpg)
+def set_background(image_file):
+    with open(image_file, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpeg;base64,{encoded}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+
+        .block-container {{
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2rem;
+            border-radius: 10px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Call the function
+set_background("ship.Titanic.jpg")
 
 # Title
 st.title("🚢 Titanic Data Analytics Dashboard")
@@ -14,100 +41,64 @@ st.title("🚢 Titanic Data Analytics Dashboard")
 # Load Data
 df = pd.read_csv("cleaned_titanic.csv")
 
-# ------------------ SIDEBAR FILTERS ------------------
-
+# Sidebar Filters
 st.sidebar.header("🔍 Filter Options")
+gender = st.sidebar.selectbox("Select Gender", options=["All"] + list(df["Sex"].dropna().unique()))
+pclass = st.sidebar.selectbox("Select Passenger Class", options=["All"] + sorted(df["Pclass"].dropna().unique()))
+embarked = st.sidebar.multiselect("Select Embarked Port", options=df["Embarked"].dropna().unique(), default=df["Embarked"].dropna().unique())
+age_range = st.sidebar.slider("Select Age Range", int(df["Age"].min()), int(df["Age"].max()), (10, 50))
 
-# Gender filter
-gender = st.sidebar.multiselect("Select Gender", options=df["Sex"].unique(), default=list(df["Sex"].unique()))
-
-# Pclass filter
-pclass = st.sidebar.multiselect("Select Passenger Class", options=sorted(df["Pclass"].unique()), default=sorted(df["Pclass"].unique()))
-
-# Age slider filter
-age_min = int(df["Age"].min())
-age_max = int(df["Age"].max())
-age_range = st.sidebar.slider("Select Age Range", min_value=age_min, max_value=age_max, value=(age_min, age_max))
-
-# Fare slider filter
-fare_min = int(df["Fare"].min())
-fare_max = int(df["Fare"].max())
-fare_range = st.sidebar.slider("Select Fare Range", min_value=fare_min, max_value=fare_max, value=(fare_min, fare_max))
-
-# Embarked port filter
-embarked = st.sidebar.multiselect("Select Embarked Port", options=df["Embarked"].dropna().unique(), default=list(df["Embarked"].dropna().unique()))
-
-# ------------------ APPLY FILTERS ------------------
-
-filtered_df = df[
-    (df["Sex"].isin(gender)) &
-    (df["Pclass"].isin(pclass)) &
-    (df["Age"].between(age_range[0], age_range[1])) &
-    (df["Fare"].between(fare_range[0], fare_range[1])) &
-    (df["Embarked"].isin(embarked))
+# Apply filters
+filtered_df = df.copy()
+if gender != "All":
+    filtered_df = filtered_df[filtered_df["Sex"] == gender]
+if pclass != "All":
+    filtered_df = filtered_df[filtered_df["Pclass"] == pclass]
+filtered_df = filtered_df[
+    (filtered_df["Embarked"].isin(embarked)) &
+    (filtered_df["Age"].between(age_range[0], age_range[1]))
 ]
 
-# ------------------ DATA PREVIEW ------------------
+# Show Data
+if st.checkbox("Show Filtered Raw Data"):
+    st.dataframe(filtered_df)
 
-st.subheader("📋 Filtered Raw Data")
-st.dataframe(filtered_df)
-
-# ------------------ VISUALIZATIONS ------------------
-
-# First Row
+# 2x3 Layout
 col1, col2 = st.columns(2)
-
 with col1:
-    st.subheader("1️⃣ Survival Count by Gender")
+    st.subheader("Survival Count by Gender")
     fig1, ax1 = plt.subplots()
-    sns.countplot(data=filtered_df, x="Survived", hue="Sex", ax=ax1)
-    ax1.set_title("Survival Count")
+    sns.countplot(data=filtered_df, x="Sex", hue="Sex", ax=ax1)
     st.pyplot(fig1)
 
 with col2:
-    st.subheader("2️⃣ Age Distribution")
+    st.subheader("Age Distribution")
     fig2, ax2 = plt.subplots()
     sns.histplot(filtered_df["Age"].dropna(), kde=True, bins=30, ax=ax2)
-    ax2.set_title("Age Distribution")
     st.pyplot(fig2)
 
-# Second Row
 col3, col4 = st.columns(2)
-
 with col3:
-    st.subheader("3️⃣ Survival Rate by Passenger Class")
+    st.subheader("Survival Rate by Passenger Class")
     fig3, ax3 = plt.subplots()
     sns.barplot(data=filtered_df, x="Pclass", y="Survived", ax=ax3)
-    ax3.set_title("Survival Rate by Class")
     st.pyplot(fig3)
 
 with col4:
-    st.subheader("4️⃣ Fare vs Age (Colored by Survival)")
+    st.subheader("Fare vs Age Scatter Plot")
     fig4, ax4 = plt.subplots()
-    sns.scatterplot(data=filtered_df, x="Age", y="Fare", hue="Survived", palette="Set1", ax=ax4)
-    ax4.set_title("Fare vs Age")
+    sns.scatterplot(data=filtered_df, x="Age", y="Fare", hue="Sex", ax=ax4)
     st.pyplot(fig4)
 
-# Third Row
 col5, col6 = st.columns(2)
-
 with col5:
-    st.subheader("5️⃣ Passenger Count by Embarked Port")
+    st.subheader("Passenger Count by Embarked Port")
     fig5, ax5 = plt.subplots()
-    sns.countplot(data=filtered_df, x="Embarked", hue="Survived", ax=ax5)
-    ax5.set_title("Embarked Port vs Survival")
+    sns.countplot(data=filtered_df, x="Embarked", hue="Embarked", ax=ax5)
     st.pyplot(fig5)
 
 with col6:
-    st.subheader("6️⃣ Correlation Heatmap")
-    numeric_cols = ["Age", "Fare", "Pclass", "Survived", "SibSp", "Parch"]
-    corr_data = filtered_df[numeric_cols].dropna()
+    st.subheader("Survival by Pclass and Gender")
     fig6, ax6 = plt.subplots()
-    sns.heatmap(corr_data.corr(), annot=True, cmap="coolwarm", ax=ax6)
-    ax6.set_title("Feature Correlation Heatmap")
+    sns.countplot(data=filtered_df, x="Pclass", hue="Sex", ax=ax6)
     st.pyplot(fig6)
-
-# ------------------ FOOTER ------------------
-
-st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit")
