@@ -37,10 +37,12 @@ df = pd.read_csv("cleaned_titanic.csv")
 
 # Sidebar Filters
 st.sidebar.header("🔍 Filter Options")
+
 gender = st.sidebar.selectbox("Select Gender", options=["All"] + list(df["Sex"].dropna().unique()))
 pclass = st.sidebar.selectbox("Select Passenger Class", options=["All"] + sorted(df["Pclass"].dropna().unique()))
 embarked = st.sidebar.multiselect("Select Embarked Port", options=df["Embarked"].dropna().unique(), default=df["Embarked"].dropna().unique())
 age_range = st.sidebar.slider("Select Age Range", int(df["Age"].min()), int(df["Age"].max()), (10, 50))
+fare_range = st.sidebar.slider("Select Fare Range", float(df["Fare"].min()), float(df["Fare"].max()), (10.0, 100.0))
 
 # Apply filters
 filtered_df = df.copy()
@@ -50,7 +52,8 @@ if pclass != "All":
     filtered_df = filtered_df[filtered_df["Pclass"] == pclass]
 filtered_df = filtered_df[
     (filtered_df["Embarked"].isin(embarked)) &
-    (filtered_df["Age"].between(age_range[0], age_range[1]))
+    (filtered_df["Age"].between(age_range[0], age_range[1])) &
+    (filtered_df["Fare"].between(fare_range[0], fare_range[1]))
 ]
 
 # Show Data
