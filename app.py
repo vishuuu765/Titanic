@@ -7,33 +7,27 @@ import base64
 # Page Config
 st.set_page_config(page_title="Titanic EDA Dashboard", layout="wide")
 
-# Set background image from local file (ship.Titanic.jpg)
-def set_background(image_file):
-    with open(image_file, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
+# Function to set background image with gray overlay
+def set_bg_with_overlay(image_path):
+    with open(image_path, "rb") as img:
+        encoded = base64.b64encode(img.read()).decode()
     st.markdown(
         f"""
         <style>
         .stApp {{
-            background-image: url("data:image/jpeg;base64,{encoded}");
+            background-image: linear-gradient(rgba(100, 100, 100, 0.4), rgba(100, 100, 100, 0.4)),
+                              url("data:image/jpeg;base64,{encoded}");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed;
-        }}
-
-        .block-container {{
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 2rem;
-            border-radius: 10px;
         }}
         </style>
         """,
         unsafe_allow_html=True
     )
 
-# Call the function
-set_background("ship.Titanic.jpg")
+# Set background image
+set_bg_with_overlay("ship.Titanic.jpg")
 
 # Title
 st.title("🚢 Titanic Data Analytics Dashboard")
@@ -63,8 +57,9 @@ filtered_df = filtered_df[
 if st.checkbox("Show Filtered Raw Data"):
     st.dataframe(filtered_df)
 
-# 2x3 Layout
+# Layout 2x3 for charts
 col1, col2 = st.columns(2)
+
 with col1:
     st.subheader("Survival Count by Gender")
     fig1, ax1 = plt.subplots()
@@ -78,6 +73,7 @@ with col2:
     st.pyplot(fig2)
 
 col3, col4 = st.columns(2)
+
 with col3:
     st.subheader("Survival Rate by Passenger Class")
     fig3, ax3 = plt.subplots()
@@ -91,6 +87,7 @@ with col4:
     st.pyplot(fig4)
 
 col5, col6 = st.columns(2)
+
 with col5:
     st.subheader("Passenger Count by Embarked Port")
     fig5, ax5 = plt.subplots()
