@@ -18,21 +18,55 @@ df = pd.read_csv("cleaned_titanic.csv")
 if st.checkbox("Show Raw Data"):
     st.dataframe(df)
 
-# Sidebar Filters
+# ------------------ SIDEBAR FILTERS ------------------
+
 st.sidebar.header("🔍 Filter Options")
-gender = st.sidebar.selectbox("Select Gender", options=df["Sex"].unique())
-pclass = st.sidebar.selectbox("Select Passenger Class", options=sorted(df["Pclass"].unique()))
 
-# Apply Filters
-filtered_df = df[(df["Sex"] == gender) & (df["Pclass"] == pclass)]
+# Gender filter
+gender = st.sidebar.multiselect("Select Gender", options=df["Sex"].unique(), default=list(df["Sex"].unique()))
 
-# Show Filtered Data
+# Pclass filter
+pclass = st.sidebar.multiselect("Select Passenger Class", options=sorted(df["Pclass"].unique()), default=sorted(df["Pclass"].unique()))
+
+# Age slider filter
+age_min = int(df["Age"].min())
+age_max = int(df["Age"].max())
+age_range = st.sidebar.slider("Select Age Range", min_value=age_min, max_value=age_max, value=(age_min, age_max))
+
+# Fare slider filter
+fare_min = int(df["Fare"].min())
+fare_max = int(df["Fare"].max())
+fare_range = st.sidebar.slider("Select Fare Range", min_value=fare_min, max_value=fare_max, value=(fare_min, fare_max))
+
+# Embarked port filter
+embarked = st.sidebar.multiselect("Select Embarked Port", options=df["Embarked"].dropna().unique(), default=list(df["Embarked"].dropna().unique()))
+
+# Survival filter
+survival_filter = st.sidebar.radio("Survival Status", options=["All", "Survived", "Not Survived"])
+
+# ------------------ APPLY FILTERS ------------------
+
+filtered_df = df[
+    (df["Sex"].isin(gender)) &
+    (df["Pclass"].isin(pclass)) &
+    (df["Age"].between(age_range[0], age_range[1])) &
+    (df["Fare"].between(fare_range[0], fare_range[1])) &
+    (df["Embarked"].isin(embarked))
+]
+
+if survival_filter == "Survived":
+    filtered_df = filtered_df[filtered_df["Survived"] == 1]
+elif survival_filter == "Not Survived":
+    filtered_df = filtered_df[filtered_df["Survived"] == 0]
+
+# ------------------ DATA PREVIEW ------------------
+
 st.subheader("🎯 Filtered Data Preview")
 st.write(filtered_df.head())
 
-# ------------------------ VISUALIZATIONS ------------------------
+# ------------------ VISUALIZATIONS ------------------
 
-# 🔹 First Row (2 columns)
+# First Row
 col1, col2 = st.columns(2)
 
 with col1:
@@ -49,7 +83,7 @@ with col2:
     ax2.set_title("Age Distribution")
     st.pyplot(fig2)
 
-# 🔹 Second Row (2 columns)
+# Second Row
 col3, col4 = st.columns(2)
 
 with col3:
@@ -66,7 +100,7 @@ with col4:
     ax4.set_title("Fare vs Age")
     st.pyplot(fig4)
 
-# 🔹 Third Row (2 columns)
+# Third Row
 col5, col6 = st.columns(2)
 
 with col5:
@@ -85,6 +119,7 @@ with col6:
     ax6.set_title("Feature Correlation Heatmap")
     st.pyplot(fig6)
 
-# Footer
+# ------------------ FOOTER ------------------
+
 st.markdown("---")
 st.markdown("Made with ❤️ using Streamlit")
