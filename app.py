@@ -14,10 +14,6 @@ st.title("🚢 Titanic Data Analytics Dashboard")
 # Load Data
 df = pd.read_csv("cleaned_titanic.csv")
 
-# Show Raw Data
-if st.checkbox("Show Raw Data"):
-    st.dataframe(df)
-
 # ------------------ SIDEBAR FILTERS ------------------
 
 st.sidebar.header("🔍 Filter Options")
@@ -41,9 +37,6 @@ fare_range = st.sidebar.slider("Select Fare Range", min_value=fare_min, max_valu
 # Embarked port filter
 embarked = st.sidebar.multiselect("Select Embarked Port", options=df["Embarked"].dropna().unique(), default=list(df["Embarked"].dropna().unique()))
 
-# Survival filter
-survival_filter = st.sidebar.radio("Survival Status", options=["All", "Survived", "Not Survived"])
-
 # ------------------ APPLY FILTERS ------------------
 
 filtered_df = df[
@@ -54,15 +47,10 @@ filtered_df = df[
     (df["Embarked"].isin(embarked))
 ]
 
-if survival_filter == "Survived":
-    filtered_df = filtered_df[filtered_df["Survived"] == 1]
-elif survival_filter == "Not Survived":
-    filtered_df = filtered_df[filtered_df["Survived"] == 0]
-
 # ------------------ DATA PREVIEW ------------------
 
-st.subheader("🎯 Filtered Data Preview")
-st.write(filtered_df.head())
+st.subheader("📋 Filtered Raw Data")
+st.dataframe(filtered_df)
 
 # ------------------ VISUALIZATIONS ------------------
 
